@@ -13,35 +13,7 @@ window.addEventListener("load", () => {
       long = position.coords.longitude;
       lat = position.coords.latitude;
       const url = `http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${long}&appid=4d8fb5b93d4af21d66a2948710284366&units=metric`;
-      fetch(url)
-        .then((response) => response.json())
-        .then((data) => {
-          const {
-            list, //vzima temperatura, //vzima discription za vremeto i ikonka
-            city, //vzima ime na grad i vzima abreviatura na grada
-          } = data;
-          const neededDays = [];
-          neededDays.push(list[0]);
-          let wantedHour = timeConverter(list[0]["dt"]);
-          for (let i = 1; i < list.length - 1; i++) {
-            let currentDateOfRec = timeConverter(list[i]["dt"]);
-            if (wantedHour.hour === currentDateOfRec.hour) {
-              neededDays.push(list[i]);
-            }
-          }
-          for (let i = 0; i < neededDays.length; i++) {
-            const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${neededDays[i].weather[0]["icon"]}.svg`;
-            let li = document.createElement("li");
-            li.classList.add("city");
-            let a = createInnerHTMLForTag(neededDays[i], icon, city);
-            li.innerHTML = a;
-            documentList.appendChild(li);
-          }
-        })
-        .catch(() => {
-          msg.textContent = "Please search for a valid city 😩";
-        });
-
+      fetchUrl(url);
       msg.textContent = "";
     });
   }
@@ -53,32 +25,7 @@ form.addEventListener("submit", (e) => {
   let divCities = document.querySelector(".container .cities");
   divCities.innerHTML = "";
   const url = `https://api.openweathermap.org/data/2.5/forecast?q=${inputVal}&appid=4d8fb5b93d4af21d66a2948710284366&units=metric`;
-  fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
-      const { list, city } = data;
-      const neededDays = [];
-
-      neededDays.push(list[0]);
-      let wantedHour = timeConverter(list[0]["dt"]);
-      for (let i = 1; i < list.length - 1; i++) {
-        let currentDateOfRec = timeConverter(list[i]["dt"]);
-        if (wantedHour.hour === currentDateOfRec.hour) {
-          neededDays.push(list[i]);
-        }
-      }
-      for (let i = 0; i < neededDays.length; i++) {
-        const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${neededDays[i].weather[0]["icon"]}.svg`;
-        let li = document.createElement("li");
-        li.classList.add("city");
-        let a = createInnerHTMLForTag(neededDays[i], icon, city);
-        li.innerHTML = a;
-        documentList.appendChild(li);
-      }
-    })
-    .catch(() => {
-      msg.textContent = "Please search for a valid city 😩";
-    });
+  fetchUrl(url);
 
   msg.textContent = "";
   form.reset();
@@ -143,3 +90,34 @@ const daysOfWeek = {
   5: "Friday",
   6: "Saturday",
 };
+
+function fetchUrl(url) {
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      const {
+        list, //vzima temperatura, //vzima discription za vremeto i ikonka
+        city, //vzima ime na grad i vzima abreviatura na grada
+      } = data;
+      const neededDays = [];
+      neededDays.push(list[0]);
+      let wantedHour = timeConverter(list[0]["dt"]);
+      for (let i = 1; i < list.length - 1; i++) {
+        let currentDateOfRec = timeConverter(list[i]["dt"]);
+        if (wantedHour.hour === currentDateOfRec.hour) {
+          neededDays.push(list[i]);
+        }
+      }
+      for (let i = 0; i < neededDays.length; i++) {
+        const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${neededDays[i].weather[0]["icon"]}.svg`;
+        let li = document.createElement("li");
+        li.classList.add("city");
+        let a = createInnerHTMLForTag(neededDays[i], icon, city);
+        li.innerHTML = a;
+        documentList.appendChild(li);
+      }
+    })
+    .catch(() => {
+      msg.textContent = "Please search for a valid city 😩";
+    });
+}
