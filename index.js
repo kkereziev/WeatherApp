@@ -3,18 +3,15 @@ const form = document.querySelector(".top-banner form"); //za 4te nadolu-vzimame
 const input = document.querySelector(".top-banner input");
 const msg = document.querySelector(".top-banner .msg");
 const documentList = document.querySelector(".ajax-section .cities");
-const apiKey = "4d8fb5b93d4af21d66a2948710284366"; //key-at koito trqbva da izpolzvame, za da vzemem info ot apito za vremeto
+const apiKey = "4d8fb5b93d4af21d66a2948710284366";
 
 window.addEventListener("load", () => {
-  //event pri zarejdane na prilojenieto, namira ni lokaciqta i ni suzdava formite s vremeto
-  let long;
-  let lat;
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((position) => {
       //vgradeno api za geolokaciq v js
-      long = position.coords.longitude; //vzimame longtitute
-      lat = position.coords.latitude; //vzimame latitute
-      const url = `http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${long}&appid=4d8fb5b93d4af21d66a2948710284366&units=metric`;
+      const long = position.coords.longitude; //vzimame longtitute
+      const lat = position.coords.latitude; //vzimame latitute
+      const url = `http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${long}&appid=${apiKey}&units=metric`;
       fetchUrl(url);
       msg.textContent = "";
     });
@@ -24,10 +21,10 @@ window.addEventListener("load", () => {
 form.addEventListener("submit", (e) => {
   //event listener za tursene po ime na grad i ni suzdava formite s vremeto
   e.preventDefault();
-  let inputVal = input.value;
+  const inputVal = input.value;
   let divCities = document.querySelector(".container .cities");
   divCities.innerHTML = "";
-  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${inputVal}&appid=4d8fb5b93d4af21d66a2948710284366&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/forecast?q=${inputVal}&appid=${apiKey}&units=metric`;
   fetchUrl(url);
 
   msg.textContent = "";
@@ -37,15 +34,11 @@ form.addEventListener("submit", (e) => {
 
 function createInnerHTMLForTag(we, icon, city) {
   return `<h2 class="city-name" data-name="${city.name},${city.country}">
-          <span>${city.name}</span> <!--ime na grada-->
-          <sup>${
-            city.country
-          }</sup> <!--abreviaturata na stranata primerno bg,us-->
-          <span>${we["dt_txt"]}</span> <!--datata-->
+          <span>${city.name}</span> 
+          <sup>${city.country}</sup> 
+          <span>${we["dt_txt"]}</span> 
         </h2>
-        <div class="city-temp">${Math.round(
-          we.main.temp
-        )}<sup>°C</sup></div> <!--temperaturata-->
+        <div class="city-temp">${Math.round(we.main.temp)}<sup>°C</sup></div> 
         <figure>
           <img class="city-icon" src="${icon}" alt="${
     we.weather[0]["description"] //ikonka i deskripshuna na vremeto
@@ -55,7 +48,6 @@ function createInnerHTMLForTag(we, icon, city) {
 }
 
 function timeConverter(UNIX_timestamp) {
-  //konvertira unix kum data
   const a = new Date(Number(UNIX_timestamp) * 1000);
   const months = [
     "Jan",
@@ -100,35 +92,34 @@ const daysOfWeek = {
 };
 
 function fetchUrl(url) {
-  //suzdava formite
-  fetch(url) //muy importante!!!! vzima zaqvki ot saitove i gi obrabotva
-    .then((response) => response.json()) //responsut se parsva v json
+  fetch(url)
+    .then((response) => response.json())
     .then((data) => {
-      //data= json ot zaqvkata
       const {
-        list, //vzima temperatura, //vzima discription za vremeto i ikonka
+        list, //vzima temperatura, vzima discription za vremeto i ikonka
         city, //vzima ime na grad i vzima abreviatura na grada let {list}
-      } = data; //destructoring
-      const neededDays = []; //suzdavame prazen masiv
-      neededDays.push(list[0]); //butame purviq element ot list
-      let wantedHour = timeConverter(list[0]["dt"]);
-      for (let i = 1; i < list.length - 1; i++) {
-        let currentDateOfRec = timeConverter(list[i]["dt"]);
+      } = data;
+      const wantedHour = timeConverter(list[0]["dt"]);
+
+      const neededDays = list.reduce((a, b, i) => {
+        i++;
+        let currentDateOfRec = timeConverter(b["dt"]);
         if (wantedHour.hour === currentDateOfRec.hour) {
-          //proverka za chasovete //vzimame vsichki zapisi koito sa s ednakuv chas na 0leviq element na list
-          neededDays.push(list[i]);
+          a.push(b);
         }
-      }
-      for (let i = 0; i < neededDays.length; i++) {
-        const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${neededDays[i].weather[0]["icon"]}.svg`; //ikonki za vremeto
-        let li = document.createElement("li"); //suzdavame li element
-        li.classList.add("city"); // dobavqme na li elementa class=city
-        let a = createInnerHTMLForTag(neededDays[i], icon, city); // fuknkciq za generirane na html-a na otdelnite tabcheta s vremeto
-        li.innerHTML = a; //dobavqme tabove na otdelnite li elementi
-        documentList.appendChild(li); //zakachame li elementa kum elementa .ajax-section .cities=
-      }
+        return a;
+      }, []);
+
+      neededDays.map((x) => {
+        const icon = `https://s3-us-west-2.amazonaws.com/s.cdpn.io/162656/${x.weather[0]["icon"]}.svg`; //ikonki za vremeto
+        let li = document.createElement("li");
+        li.classList.add("city");
+        let a = createInnerHTMLForTag(x, icon, city); // fuknkciq za generirane na html-a na otdelnite tabcheta s vremeto
+        li.innerHTML = a;
+        documentList.appendChild(li);
+      });
     })
     .catch(() => {
-      msg.textContent = "Please search for a valid city 😩"; // ako apito ni vurne bad request obrabotvame greshkata
+      msg.textContent = "Please search for a valid city 😩";
     });
 }
